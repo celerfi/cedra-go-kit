@@ -109,7 +109,7 @@ func (pk *Secp256k1PublicKey) AuthKey() []byte {
 }
 
 func (pk *Secp256k1PublicKey) Serialize(s *bcs.Serializer) {
-	s.SerializeFixedBytes(pk.Bytes())
+	s.SerializeBytes(pk.Bytes())
 }
 
 func (sig *Secp256k1Signature) Bytes() []byte {
@@ -117,5 +117,5 @@ func (sig *Secp256k1Signature) Bytes() []byte {
 }
 
 func (sig *Secp256k1Signature) Serialize(s *bcs.Serializer) {
-	s.SerializeFixedBytes(sig.bytes[:])
+	s.SerializeBytes(sig.bytes[:])
 }

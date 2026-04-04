@@ -89,7 +89,7 @@ func (pk *Ed25519PublicKey) AuthKey() []byte {
 }
 
 func (pk *Ed25519PublicKey) Serialize(s *bcs.Serializer) {
-	s.SerializeFixedBytes(pk.Bytes())
+	s.SerializeBytes(pk.Bytes())
 }
 
 func (sig *Ed25519Signature) Bytes() []byte {
@@ -97,5 +97,5 @@ func (sig *Ed25519Signature) Bytes() []byte {
 }
 
 func (sig *Ed25519Signature) Serialize(s *bcs.Serializer) {
-	s.SerializeFixedBytes(sig.bytes[:])
+	s.SerializeBytes(sig.bytes[:])
 }
