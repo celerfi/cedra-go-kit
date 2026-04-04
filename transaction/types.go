@@ -151,6 +151,17 @@ type RawTransaction struct {
 	GasUnitPrice            uint64
 	ExpirationTimestampSecs uint64
 	ChainID                 uint8
+	FeePayerCurrency        TypeTag // gas fee currency TypeTag; defaults to 0x1::cedra_coin::CedraCoin
+}
+
+// defaultFeePayerCurrency returns the TypeTag for CEDRA coin used as default gas currency.
+func defaultFeePayerCurrency() TypeTag {
+	addr, _ := account.AccountAddressFromHex("0x1")
+	return TypeTagStruct{
+		Address: addr,
+		Module:  "cedra_coin",
+		Name:    "CedraCoin",
+	}
 }
 
 func (r *RawTransaction) Serialize(s *bcs.Serializer) {
@@ -162,6 +173,11 @@ func (r *RawTransaction) Serialize(s *bcs.Serializer) {
 	s.SerializeU64(r.GasUnitPrice)
 	s.SerializeU64(r.ExpirationTimestampSecs)
 	s.SerializeU8(r.ChainID)
+	currency := r.FeePayerCurrency
+	if currency == nil {
+		currency = defaultFeePayerCurrency()
+	}
+	currency.serializeTypeTag(s)
 }
 
 // Argument encoding helpers
