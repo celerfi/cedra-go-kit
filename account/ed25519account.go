@@ -33,34 +33,17 @@ func NewEd25519AccountFromHex(hexKey string) (*Ed25519Account, error) {
 	return NewEd25519AccountFromPrivateKey(priv), nil
 }
 
-func (a *Ed25519Account) Address() AccountAddress {
-	return a.address
-}
+func (a *Ed25519Account) Address() AccountAddress   { return a.address }
+func (a *Ed25519Account) AuthKey() []byte           { return a.privateKey.PublicKey().AuthKey() }
+func (a *Ed25519Account) PublicKeyBytes() []byte    { return a.privateKey.PublicKey().Bytes() }
+func (a *Ed25519Account) PrivateKeyBytes() []byte   { return a.privateKey.Bytes() }
+func (a *Ed25519Account) PrivateKeyHex() string     { return a.privateKey.Hex() }
 
-func (a *Ed25519Account) AuthKey() []byte {
-	return a.privateKey.PublicKey().AuthKey()
-}
-
-func (a *Ed25519Account) PublicKeyBytes() []byte {
-	return a.privateKey.PublicKey().Bytes()
-}
-
-func (a *Ed25519Account) PrivateKeyBytes() []byte {
-	return a.privateKey.Bytes()
-}
-
-func (a *Ed25519Account) PrivateKeyHex() string {
-	return a.privateKey.Hex()
-}
-
-// SignTransaction returns a BCS-encoded Ed25519 AccountAuthenticator.
-// variant 0 = Ed25519
 func (a *Ed25519Account) SignTransaction(signingMessage []byte) ([]byte, error) {
 	sig := a.privateKey.Sign(signingMessage)
 	pub := a.privateKey.PublicKey()
-
 	s := &bcs.Serializer{}
-	s.SerializeULEB128(0) // AccountAuthenticatorEd25519 variant
+	s.SerializeULEB128(0)
 	pub.Serialize(s)
 	sig.Serialize(s)
 	return s.ToBytes(), nil

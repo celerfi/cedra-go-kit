@@ -67,7 +67,7 @@ func (t *TransactionAPI) BuildTransaction(ctx context.Context, sender account.Ac
 }
 
 func (t *TransactionAPI) SimulateTransaction(ctx context.Context, rawTxn *transaction.RawTransaction, signer account.Account) ([]types.CommittedTransaction, error) {
-	signedBytes, err := transaction.SignTransaction(rawTxn, signer)
+	signedBytes, err := transaction.SimulateTransaction(rawTxn, signer)
 	if err != nil {
 		return nil, err
 	}

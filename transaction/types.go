@@ -8,7 +8,6 @@ import (
 	"github.com/celerfi/cedra-go-kit/bcs"
 )
 
-// TypeTag variants
 const (
 	typeTagBool    = 0
 	typeTagU8      = 1
@@ -70,7 +69,6 @@ func (t TypeTagStruct) serializeTypeTag(s *bcs.Serializer) {
 	}
 }
 
-// ParseTypeTag parses a Move type tag string like "0x1::module::Type"
 func ParseTypeTag(s string) TypeTag {
 	switch s {
 	case "bool":
@@ -96,7 +94,6 @@ func ParseTypeTag(s string) TypeTag {
 		inner := s[7 : len(s)-1]
 		return TypeTagVector{Element: ParseTypeTag(inner)}
 	}
-	// struct: 0xADDR::module::Name<...>
 	parts := strings.SplitN(s, "::", 3)
 	if len(parts) == 3 {
 		addr, _ := account.AccountAddressFromHex(parts[0])
@@ -111,16 +108,14 @@ func ParseTypeTag(s string) TypeTag {
 		}
 		return TypeTagStruct{Address: addr, Module: parts[1], Name: name, TypeParams: typeParams}
 	}
-	return TypeTagU64{} // fallback
+	return TypeTagU64{}
 }
 
-// ModuleID identifies a Move module
 type ModuleID struct {
 	Address account.AccountAddress
 	Name    string
 }
 
-// EntryFunction is a Move entry function call
 type EntryFunction struct {
 	Module   ModuleID
 	Function string
@@ -142,7 +137,6 @@ func (e *EntryFunction) Serialize(s *bcs.Serializer) {
 	}
 }
 
-// RawTransaction is an unsigned Cedra transaction
 type RawTransaction struct {
 	Sender                  account.AccountAddress
 	SequenceNumber          uint64
@@ -151,23 +145,18 @@ type RawTransaction struct {
 	GasUnitPrice            uint64
 	ExpirationTimestampSecs uint64
 	ChainID                 uint8
-	FeePayerCurrency        TypeTag // gas fee currency TypeTag; defaults to 0x1::cedra_coin::CedraCoin
+	FeePayerCurrency        TypeTag
 }
 
-// defaultFeePayerCurrency returns the TypeTag for CEDRA coin used as default gas currency.
 func defaultFeePayerCurrency() TypeTag {
 	addr, _ := account.AccountAddressFromHex("0x1")
-	return TypeTagStruct{
-		Address: addr,
-		Module:  "cedra_coin",
-		Name:    "CedraCoin",
-	}
+	return TypeTagStruct{Address: addr, Module: "cedra_coin", Name: "CedraCoin"}
 }
 
 func (r *RawTransaction) Serialize(s *bcs.Serializer) {
 	r.Sender.Serialize(s)
 	s.SerializeU64(r.SequenceNumber)
-	s.SerializeULEB128(2) // payload variant 2 = EntryFunction
+	s.SerializeULEB128(2)
 	r.Payload.Serialize(s)
 	s.SerializeU64(r.MaxGasAmount)
 	s.SerializeU64(r.GasUnitPrice)
@@ -179,8 +168,6 @@ func (r *RawTransaction) Serialize(s *bcs.Serializer) {
 	}
 	currency.serializeTypeTag(s)
 }
-
-// Argument encoding helpers
 
 func SerializeBoolArg(v bool) []byte {
 	s := &bcs.Serializer{}

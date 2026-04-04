@@ -9,16 +9,8 @@ import (
 
 const rawTransactionSalt = "CEDRA::RawTransaction"
 
-// SignTransaction serializes rawTxn, computes the signing message, signs it,
-// and returns the BCS-encoded SignedTransaction bytes ready for submission.
-//
-// Signing message = sha3_256(salt) || bcs(rawTxn)
-// The prefix is the hash of the domain separator only; the raw txn bytes are appended unmodified.
 func SignTransaction(rawTxn *RawTransaction, signer account.Account) ([]byte, error) {
-	txnS := &bcs.Serializer{}
-	rawTxn.Serialize(txnS)
-	txnBytes := txnS.ToBytes()
-
+	txnBytes := serializeRawTxn(rawTxn)
 	prefix := sha3.Sum256([]byte(rawTransactionSalt))
 	signingMessage := append(prefix[:], txnBytes...)
 
@@ -31,4 +23,29 @@ func SignTransaction(rawTxn *RawTransaction, signer account.Account) ([]byte, er
 	signed.SerializeFixedBytes(txnBytes)
 	signed.SerializeFixedBytes(authenticator)
 	return signed.ToBytes(), nil
+}
+
+func SimulateTransaction(rawTxn *RawTransaction, signer account.Account) ([]byte, error) {
+	txnBytes := serializeRawTxn(rawTxn)
+	authenticator := zeroedAuthenticator(signer)
+
+	signed := &bcs.Serializer{}
+	signed.SerializeFixedBytes(txnBytes)
+	signed.SerializeFixedBytes(authenticator)
+	return signed.ToBytes(), nil
+}
+
+func serializeRawTxn(rawTxn *RawTransaction) []byte {
+	s := &bcs.Serializer{}
+	rawTxn.Serialize(s)
+	return s.ToBytes()
+}
+
+func zeroedAuthenticator(signer account.Account) []byte {
+	pubKey := signer.PublicKeyBytes()
+	s := &bcs.Serializer{}
+	s.SerializeULEB128(0)
+	s.SerializeBytes(pubKey)
+	s.SerializeBytes(make([]byte, 64))
+	return s.ToBytes()
 }
