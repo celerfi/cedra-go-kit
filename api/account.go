@@ -11,6 +11,9 @@ import (
 	"github.com/celerfi/cedra-go-kit/types"
 )
 
+// cedraFAAddress is the on-chain FA metadata address for CEDRA (0x000...000a)
+const cedraFAAddress = "0x000000000000000000000000000000000000000000000000000000000000000a"
+
 type AccountAPI struct {
 	c *client.Client
 }
@@ -75,13 +78,30 @@ func (a *AccountAPI) GetAccountTransactions(ctx context.Context, address string,
 }
 
 func (a *AccountAPI) GetAccountCEDRABalance(ctx context.Context, address string) (uint64, error) {
-	resource, err := a.GetAccountResource(ctx, address, "0x1::coin::CoinStore<0x1::cedra_coin::CedraCoin>")
-	if err != nil {
-		return 0, err
+	return a.GetAccountFABalance(ctx, address, cedraFAAddress)
+}
+
+// GetAccountFABalance returns the balance of any fungible asset for an account using a view function.
+func (a *AccountAPI) GetAccountFABalance(ctx context.Context, address, faMetadataAddress string) (uint64, error) {
+	req := types.ViewRequest{
+		Function:      "0x1::primary_fungible_store::balance",
+		TypeArguments: []string{"0x1::fungible_asset::Metadata"},
+		Arguments:     []any{address, faMetadataAddress},
 	}
-	var store types.CoinStore
-	if err := json.Unmarshal(resource.Data, &store); err != nil {
-		return 0, fmt.Errorf("account: parse coin store: %w", err)
+	var raw json.RawMessage
+	if err := a.c.Post(ctx, "/view", req, &raw); err != nil {
+		return 0, fmt.Errorf("account: get FA balance: %w", err)
 	}
-	return strconv.ParseUint(store.Coin.Value, 10, 64)
+	var result []any
+	if err := json.Unmarshal(raw, &result); err != nil || len(result) == 0 {
+		return 0, fmt.Errorf("account: unexpected view response for FA balance")
+	}
+	switch v := result[0].(type) {
+	case string:
+		return strconv.ParseUint(v, 10, 64)
+	case float64:
+		return uint64(v), nil
+	default:
+		return 0, fmt.Errorf("account: unexpected type %T for FA balance", result[0])
+	}
 }

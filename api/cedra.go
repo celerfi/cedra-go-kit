@@ -28,15 +28,16 @@ func NewCedra(network client.Network) *Cedra {
 func NewCedraWithConfig(cfg client.Config) *Cedra {
 	c := client.NewClient(cfg)
 	g := newGeneralAPI(c)
+	txnAPI := newTransactionAPI(c)
 	return &Cedra{
 		cfg:         cfg,
 		httpClient:  c,
 		General:     g,
 		Account:     newAccountAPI(c),
-		Transaction: newTransactionAPI(c),
+		Transaction: txnAPI,
 		Event:       newEventAPI(c),
 		Coin:        newCoinAPI(),
-		Faucet:      newFaucetAPI(c),
+		Faucet:      newFaucetAPI(c, txnAPI),
 		ANS:         newANSAPI(c, g),
 	}
 }
