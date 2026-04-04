@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/celerfi/cedra-go-kit)](https://goreportcard.com/report/github.com/celerfi/cedra-go-kit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-The first community Go SDK for the [Cedra](https://cedra.dev) network — feature-parity with the official TypeScript SDK.
+The first community Go SDK for the [Cedra](https://cedra.dev) network, with feature-parity with the official TypeScript SDK.
 
 ## Installation
 
@@ -70,9 +70,9 @@ func main() {
 
 | Network  | Node API                              | Chain ID |
 |----------|---------------------------------------|----------|
-| Mainnet  | https://api.mainnet.cedralabs.com/v1  | 1        |
-| Testnet  | https://testnet.cedra.dev/v1          | 2        |
-| Devnet   | https://devnet.cedra.dev/v1           | 3        |
+| Mainnet  | Coming Soon                           | TBD      |
+| Testnet  | https://testnet.cedra.dev/v1          | TBD      |
+| Devnet   | https://devnet.cedra.dev/v1           | TBD      |
 | Local    | http://127.0.0.1:8080/v1              | 4        |
 
 ```go
@@ -141,13 +141,13 @@ committed, _ := cedra.WaitForTransaction(ctx, pending.Hash)
 ## ANS
 
 ```go
-// Name → address
+// Name -> address
 addr, _ := cedra.ANS.GetAddressFromName(ctx, "alice.cedra")
 
-// Address → name
+// Address -> name
 name, _ := cedra.ANS.GetNameFromAddress(ctx, "0x123...")
 ```
 
 ## License
 
-[MIT](LICENSE) — Celerfi 2026
+[MIT](LICENSE) - Celerfi 2026
