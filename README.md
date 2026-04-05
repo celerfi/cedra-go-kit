@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/celerfi/cedra-go-kit)](https://goreportcard.com/report/github.com/celerfi/cedra-go-kit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-The first community Go SDK for the [Cedra](https://cedra.dev) network, with feature-parity with the official TypeScript SDK.
+The first community Go SDK for the [Cedra](https://cedra.network) network, with feature-parity with the official TypeScript SDK.
 
 ## Installation
 
