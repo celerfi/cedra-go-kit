@@ -5,7 +5,7 @@ nav_order: 1
 
 # cedra-go-kit
 
-The community Go SDK for the [Cedra](https://cedra.dev) blockchain. Feature-parity with the official TypeScript SDK.
+The community Go SDK for the [Cedra](https://cedra.network) blockchain. Feature-parity with the official TypeScript SDK.
 
 [![Go](https://img.shields.io/badge/go-1.25-blue)](https://go.dev)
 [![CI](https://github.com/celerfi/cedra-go-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/celerfi/cedra-go-kit/actions/workflows/ci.yml)
