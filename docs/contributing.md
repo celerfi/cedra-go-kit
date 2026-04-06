@@ -15,10 +15,7 @@ git clone https://github.com/celerfi/cedra-go-kit
 cd cedra-go-kit
 
 # Run tests
-go test ./...
-
-# Run tests against live testnet
-CEDRA_RUN_INTEGRATION=true go test ./...
+go test ./... -v -race
 ```
 
 ## Reporting vulnerabilities
