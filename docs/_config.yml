@@ -1,0 +1,17 @@
+title: cedra-go-kit
+description: Community Go SDK for the Cedra blockchain
+remote_theme: just-the-docs/just-the-docs
+url: https://celerfi.github.io/cedra-go-kit
+
+color_scheme: dark
+
+aux_links:
+  GitHub:
+    - https://github.com/celerfi/cedra-go-kit
+
+aux_links_new_tab: true
+
+footer_content: "cedra-go-kit &mdash; MIT License &mdash; maintained by <a href=\"https://github.com/celerfi\">CelerFi</a>"
+
+plugins:
+  - jekyll-seo-tag
