@@ -1,0 +1,59 @@
+<h1 id="accounts">Accounts</h1>
+
+<h2 id="generate-an-account">Generate an account</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="s">"github.com/celerfi/cedra-go-kit/account"</span>
+
+<span class="c">// Ed25519 (default, recommended)</span>
+<span class="n">acct</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">account</span><span class="o">.</span><span class="n">NewEd25519Account</span><span class="p">()</span>
+
+<span class="c">// Secp256k1</span>
+<span class="n">acct</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">account</span><span class="o">.</span><span class="n">NewSingleKeyAccount</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>Both types implement the <code class="language-plaintext highlighter-rouge">Account</code> interface:</p>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">type</span> <span class="n">Account</span> <span class="k">interface</span> <span class="p">{</span>
+    <span class="n">Address</span><span class="p">()</span> <span class="n">AccountAddress</span>
+    <span class="n">AuthKey</span><span class="p">()</span> <span class="p">[]</span><span class="kt">byte</span>
+    <span class="n">PublicKeyBytes</span><span class="p">()</span> <span class="p">[]</span><span class="kt">byte</span>
+    <span class="n">SignTransaction</span><span class="p">(</span><span class="n">signingMessage</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="load-from-private-key">Load from private key</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">privKeyHex</span> <span class="o">:=</span> <span class="s">"0xabc123..."</span>
+<span class="n">acct</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">account</span><span class="o">.</span><span class="n">Ed25519AccountFromHex</span><span class="p">(</span><span class="n">privKeyHex</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="accountaddress">AccountAddress</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">// From hex string</span>
+<span class="n">addr</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">account</span><span class="o">.</span><span class="n">AccountAddressFromHex</span><span class="p">(</span><span class="s">"0x1"</span><span class="p">)</span>
+
+<span class="c">// To hex</span>
+<span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="n">acct</span><span class="o">.</span><span class="n">Address</span><span class="p">()</span><span class="o">.</span><span class="n">Hex</span><span class="p">())</span> <span class="c">// "0x000...001"</span>
+</code></pre></div></div>
+
+<p>Addresses are always padded to 32 bytes internally. <code class="language-plaintext highlighter-rouge">AccountAddressFromHex</code> handles both short (<code class="language-plaintext highlighter-rouge">0x1</code>) and full-length (<code class="language-plaintext highlighter-rouge">0x000...001</code>) forms.</p>
+
+<h2 id="fund-from-faucet-testnetdevnet-only">Fund from faucet (testnet/devnet only)</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Faucet</span><span class="o">.</span><span class="n">FundAccount</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">acct</span><span class="o">.</span><span class="n">Address</span><span class="p">()</span><span class="o">.</span><span class="n">Hex</span><span class="p">(),</span> <span class="m">100_000_000</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">FundAccount</code> waits for the faucet transaction to land on-chain before returning. Use <code class="language-plaintext highlighter-rouge">FundAccountNoWait</code> if you want the hash back immediately.</p>
+
+<h2 id="get-cedra-balance">Get CEDRA balance</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">bal</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Account</span><span class="o">.</span><span class="n">GetAccountCEDRABalance</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">addr</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Cedra uses the <a href="https://cedra.dev">Fungible Asset</a> standard. Balance is fetched via a view function on <code class="language-plaintext highlighter-rouge">0x1::primary_fungible_store</code>.</p>
+
+<h2 id="get-any-fa-balance">Get any FA balance</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">faAddress</span> <span class="o">:=</span> <span class="s">"0x000...000a"</span> <span class="c">// CEDRA FA metadata address</span>
+<span class="n">bal</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Account</span><span class="o">.</span><span class="n">GetAccountFABalance</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">faAddress</span><span class="p">)</span>
+</code></pre></div></div>

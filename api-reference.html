@@ -1,0 +1,235 @@
+<h1 id="api-reference">API Reference</h1>
+
+<p>All APIs are accessed through the top-level client:</p>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">c</span> <span class="o">:=</span> <span class="n">cedra</span><span class="o">.</span><span class="n">New</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">Testnet</span><span class="p">)</span>
+
+<span class="n">c</span><span class="o">.</span><span class="n">Account</span>     <span class="c">// AccountAPI</span>
+<span class="n">c</span><span class="o">.</span><span class="n">Transaction</span> <span class="c">// TransactionAPI</span>
+<span class="n">c</span><span class="o">.</span><span class="n">Faucet</span>      <span class="c">// FaucetAPI</span>
+<span class="n">c</span><span class="o">.</span><span class="n">General</span>     <span class="c">// GeneralAPI</span>
+<span class="n">c</span><span class="o">.</span><span class="n">Event</span>       <span class="c">// EventAPI</span>
+<span class="n">c</span><span class="o">.</span><span class="n">Coin</span>        <span class="c">// CoinAPI</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="accountapi">AccountAPI</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetAccountInfo(ctx, address)</code></td>
+      <td>Sequence number and auth key</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetSequenceNumber(ctx, address)</code></td>
+      <td>Current sequence number as <code class="language-plaintext highlighter-rouge">uint64</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetAccountResources(ctx, address)</code></td>
+      <td>All Move resources on an account</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetAccountResource(ctx, address, type)</code></td>
+      <td>Single resource by type tag</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetAccountModules(ctx, address)</code></td>
+      <td>All deployed Move modules</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetAccountTransactions(ctx, address, limit, start)</code></td>
+      <td>Paginated transaction history</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetAccountCEDRABalance(ctx, address)</code></td>
+      <td>CEDRA balance via FA standard</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetAccountFABalance(ctx, address, faAddress)</code></td>
+      <td>Any fungible asset balance</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="transactionapi">TransactionAPI</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">BuildTransaction(ctx, sender, opts)</code></td>
+      <td>Returns a <code class="language-plaintext highlighter-rouge">RawTransaction</code> ready to sign</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">SimulateTransaction(ctx, rawTxn, signer)</code></td>
+      <td>Dry-run with zeroed signature</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">SubmitTransaction(ctx, signedBCS)</code></td>
+      <td>Submit signed BCS bytes</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">WaitForTransaction(ctx, hash)</code></td>
+      <td>Poll until committed or timeout</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetTransactionByHash(ctx, hash)</code></td>
+      <td>Fetch committed transaction</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetTransactionByVersion(ctx, version)</code></td>
+      <td>Fetch by ledger version</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetTransactions(ctx, limit, start)</code></td>
+      <td>Paginated recent transactions</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">IsTransactionPending(ctx, hash)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">true</code> if not yet committed</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="faucetapi">FaucetAPI</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">FundAccount(ctx, address, amount)</code></td>
+      <td>Fund and wait for confirmation</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">FundAccountNoWait(ctx, address, amount)</code></td>
+      <td>Fund and return tx hashes immediately</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Only available on testnet and devnet.</p>
+
+<hr />
+
+<h2 id="generalapi">GeneralAPI</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetLedgerInfo(ctx)</code></td>
+      <td>Chain ID, ledger version, timestamp</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetChainID(ctx)</code></td>
+      <td>Chain ID as <code class="language-plaintext highlighter-rouge">uint8</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">HealthCheck(ctx)</code></td>
+      <td>Node liveness check</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ViewFunction(ctx, req)</code></td>
+      <td>Call any Move view function</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="eventapi">EventAPI</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetEventsByEventHandle(ctx, address, handle, field, limit, start)</code></td>
+      <td>Paginated events by handle</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GetEventsByCreationNumber(ctx, address, creationNumber, limit, start)</code></td>
+      <td>Paginated events by creation number</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="coinapi">CoinAPI</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Transfer(ctx, sender, recipient, amount)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">0x1::aptos_account::transfer</code> shorthand</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="custom-network-config">Custom network config</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="s">"github.com/celerfi/cedra-go-kit/client"</span>
+
+<span class="n">cfg</span> <span class="o">:=</span> <span class="n">client</span><span class="o">.</span><span class="n">Config</span><span class="p">{</span>
+    <span class="n">NodeURL</span><span class="o">:</span>   <span class="s">"https://my-node.example.com/v1"</span><span class="p">,</span>
+    <span class="n">FaucetURL</span><span class="o">:</span> <span class="s">"https://my-faucet.example.com"</span><span class="p">,</span>
+    <span class="n">Timeout</span><span class="o">:</span>   <span class="m">15</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">Second</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">c</span> <span class="o">:=</span> <span class="n">cedra</span><span class="o">.</span><span class="n">NewWithConfig</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="error-handling">Error handling</h2>
+
+<p>All methods return <code class="language-plaintext highlighter-rouge">error</code>. API errors carry the HTTP status code and response body:</p>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">txn</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">GetTransactionByHash</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">hash</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="n">apiErr</span> <span class="o">*</span><span class="n">client</span><span class="o">.</span><span class="n">APIError</span>
+    <span class="k">if</span> <span class="n">errors</span><span class="o">.</span><span class="n">As</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">apiErr</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="n">apiErr</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">)</span> <span class="c">// 404</span>
+        <span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="n">apiErr</span><span class="o">.</span><span class="n">Message</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>

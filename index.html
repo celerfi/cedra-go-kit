@@ -1,0 +1,109 @@
+<h1 id="cedra-go-kit">cedra-go-kit</h1>
+
+<p>The community Go SDK for the <a href="https://cedra.dev">Cedra</a> blockchain. Feature-parity with the official TypeScript SDK.</p>
+
+<p><a href="https://go.dev"><img src="https://img.shields.io/badge/go-1.25-blue" alt="Go" /></a>
+<a href="https://github.com/celerfi/cedra-go-kit/actions/workflows/ci.yml"><img src="https://github.com/celerfi/cedra-go-kit/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+<a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a></p>
+
+<hr />
+
+<h2 id="install">Install</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>go get github.com/celerfi/cedra-go-kit
+</code></pre></div></div>
+
+<p>Requires Go 1.25+.</p>
+
+<hr />
+
+<h2 id="quick-start">Quick start</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">package</span> <span class="n">main</span>
+
+<span class="k">import</span> <span class="p">(</span>
+    <span class="s">"context"</span>
+    <span class="s">"fmt"</span>
+
+    <span class="n">cedra</span> <span class="s">"github.com/celerfi/cedra-go-kit"</span>
+    <span class="s">"github.com/celerfi/cedra-go-kit/account"</span>
+    <span class="s">"github.com/celerfi/cedra-go-kit/client"</span>
+<span class="p">)</span>
+
+<span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">c</span> <span class="o">:=</span> <span class="n">cedra</span><span class="o">.</span><span class="n">New</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">Testnet</span><span class="p">)</span>
+
+    <span class="c">// Generate a new Ed25519 account</span>
+    <span class="n">acct</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">account</span><span class="o">.</span><span class="n">NewEd25519Account</span><span class="p">()</span>
+    <span class="n">addr</span> <span class="o">:=</span> <span class="n">acct</span><span class="o">.</span><span class="n">Address</span><span class="p">()</span><span class="o">.</span><span class="n">Hex</span><span class="p">()</span>
+
+    <span class="c">// Fund from faucet</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">Faucet</span><span class="o">.</span><span class="n">FundAccount</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">Background</span><span class="p">(),</span> <span class="n">addr</span><span class="p">,</span> <span class="m">100_000_000</span><span class="p">)</span>
+
+    <span class="c">// Check balance</span>
+    <span class="n">bal</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Account</span><span class="o">.</span><span class="n">GetAccountCEDRABalance</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">Background</span><span class="p">(),</span> <span class="n">addr</span><span class="p">)</span>
+    <span class="n">fmt</span><span class="o">.</span><span class="n">Printf</span><span class="p">(</span><span class="s">"balance: %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">bal</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="networks">Networks</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Constant</th>
+      <th>Node URL</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">client.Testnet</code></td>
+      <td><code class="language-plaintext highlighter-rouge">https://testnet.cedra.dev/v1</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">client.Devnet</code></td>
+      <td><code class="language-plaintext highlighter-rouge">https://devnet.cedra.dev/v1</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="packages">Packages</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Package</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="./accounts"><code class="language-plaintext highlighter-rouge">account</code></a></td>
+      <td>Key generation, address derivation</td>
+    </tr>
+    <tr>
+      <td><a href="./api-reference"><code class="language-plaintext highlighter-rouge">api</code></a></td>
+      <td>Node REST API calls</td>
+    </tr>
+    <tr>
+      <td><a href="./transactions"><code class="language-plaintext highlighter-rouge">transaction</code></a></td>
+      <td>Build, sign, simulate, submit</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">client</code></td>
+      <td>HTTP client, network config</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">bcs</code></td>
+      <td>Binary Canonical Serialization</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">crypto</code></td>
+      <td>Ed25519 and Secp256k1 primitives</td>
+    </tr>
+  </tbody>
+</table>

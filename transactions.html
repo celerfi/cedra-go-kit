@@ -1,0 +1,105 @@
+<h1 id="transactions">Transactions</h1>
+
+<h2 id="build-sign-and-submit">Build, sign, and submit</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">(</span>
+    <span class="n">cedra</span> <span class="s">"github.com/celerfi/cedra-go-kit"</span>
+    <span class="s">"github.com/celerfi/cedra-go-kit/account"</span>
+    <span class="s">"github.com/celerfi/cedra-go-kit/client"</span>
+    <span class="s">"github.com/celerfi/cedra-go-kit/transaction"</span>
+<span class="p">)</span>
+
+<span class="n">c</span> <span class="o">:=</span> <span class="n">cedra</span><span class="o">.</span><span class="n">New</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">Testnet</span><span class="p">)</span>
+<span class="n">acct</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">account</span><span class="o">.</span><span class="n">NewEd25519Account</span><span class="p">()</span>
+
+<span class="c">// 1. Build</span>
+<span class="n">rawTxn</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">BuildTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">acct</span><span class="o">.</span><span class="n">Address</span><span class="p">(),</span> <span class="n">transaction</span><span class="o">.</span><span class="n">BuildOptions</span><span class="p">{</span>
+    <span class="n">Function</span><span class="o">:</span>      <span class="s">"0x1::aptos_account::transfer"</span><span class="p">,</span>
+    <span class="n">TypeArguments</span><span class="o">:</span> <span class="p">[]</span><span class="kt">string</span><span class="p">{},</span>
+    <span class="n">Arguments</span><span class="o">:</span>     <span class="p">[]</span><span class="n">any</span><span class="p">{</span><span class="n">recipientAddr</span><span class="o">.</span><span class="n">Hex</span><span class="p">(),</span> <span class="s">"1000000"</span><span class="p">},</span>
+<span class="p">})</span>
+
+<span class="c">// 2. Sign</span>
+<span class="n">signedBytes</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">transaction</span><span class="o">.</span><span class="n">SignTransaction</span><span class="p">(</span><span class="n">rawTxn</span><span class="p">,</span> <span class="n">acct</span><span class="p">)</span>
+
+<span class="c">// 3. Submit</span>
+<span class="n">pending</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">SubmitTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">signedBytes</span><span class="p">)</span>
+
+<span class="c">// 4. Wait for confirmation</span>
+<span class="n">committed</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">WaitForTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">pending</span><span class="o">.</span><span class="n">Hash</span><span class="p">)</span>
+<span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="n">committed</span><span class="o">.</span><span class="n">Success</span><span class="p">)</span> <span class="c">// true</span>
+</code></pre></div></div>
+
+<h2 id="simulate-before-submitting">Simulate before submitting</h2>
+
+<p>Simulation lets you check gas cost and output without spending tokens.</p>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">results</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">SimulateTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">rawTxn</span><span class="p">,</span> <span class="n">acct</span><span class="p">)</span>
+<span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="m">0</span><span class="p">]</span><span class="o">.</span><span class="n">GasUsed</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The simulation endpoint requires a zeroed signature (64 zero bytes). The SDK handles this automatically via <code class="language-plaintext highlighter-rouge">transaction.SimulateTransaction</code>.</p>
+
+<h2 id="buildoptions">BuildOptions</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Function</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td>Module function e.g. <code class="language-plaintext highlighter-rouge">0x1::aptos_account::transfer</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TypeArguments</code></td>
+      <td><code class="language-plaintext highlighter-rouge">[]string</code></td>
+      <td>Generic type params</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Arguments</code></td>
+      <td><code class="language-plaintext highlighter-rouge">[]any</code></td>
+      <td>Function arguments</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MaxGasAmount</code></td>
+      <td><code class="language-plaintext highlighter-rouge">uint64</code></td>
+      <td>Override default (200,000)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GasUnitPrice</code></td>
+      <td><code class="language-plaintext highlighter-rouge">uint64</code></td>
+      <td>Override gas price</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ExpirationSecs</code></td>
+      <td><code class="language-plaintext highlighter-rouge">uint64</code></td>
+      <td>TTL from now (default 20s)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="signing-internals">Signing internals</h2>
+
+<p>The signing message follows the BCS standard:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sha3_256("CEDRA::RawTransaction") || bcs(rawTransaction)
+</code></pre></div></div>
+
+<p>Public keys and signatures are <strong>length-prefixed</strong> (ULEB128) in the authenticator, not fixed bytes. The SDK handles this correctly for both Ed25519 and Secp256k1.</p>
+
+<h2 id="fetch-by-hash-or-version">Fetch by hash or version</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">txn</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">GetTransactionByHash</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="s">"0xabc..."</span><span class="p">)</span>
+<span class="n">txn</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">GetTransactionByVersion</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="m">12345</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="check-pending-status">Check pending status</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pending</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">IsTransactionPending</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">hash</span><span class="p">)</span>
+</code></pre></div></div>

@@ -1,0 +1,33 @@
+<h1 id="bcs-binary-canonical-serialization">BCS (Binary Canonical Serialization)</h1>
+
+<p>The <code class="language-plaintext highlighter-rouge">bcs</code> package implements the serialization format used by all Move transactions on Cedra.</p>
+
+<p>You won’t need this directly for most use cases — the SDK handles BCS internally when building and signing transactions.</p>
+
+<h2 id="serializer">Serializer</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="s">"github.com/celerfi/cedra-go-kit/bcs"</span>
+
+<span class="n">s</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="n">bcs</span><span class="o">.</span><span class="n">Serializer</span><span class="p">{}</span>
+<span class="n">s</span><span class="o">.</span><span class="n">SerializeU64</span><span class="p">(</span><span class="m">12345</span><span class="p">)</span>
+<span class="n">s</span><span class="o">.</span><span class="n">SerializeBytes</span><span class="p">([]</span><span class="kt">byte</span><span class="p">{</span><span class="m">0x01</span><span class="p">,</span> <span class="m">0x02</span><span class="p">})</span>  <span class="c">// length-prefixed (ULEB128 + bytes)</span>
+<span class="n">s</span><span class="o">.</span><span class="n">SerializeFixedBytes</span><span class="p">([]</span><span class="kt">byte</span><span class="p">{</span><span class="m">0x01</span><span class="p">})</span>   <span class="c">// no length prefix</span>
+<span class="n">s</span><span class="o">.</span><span class="n">SerializeULEB128</span><span class="p">(</span><span class="m">200_000</span><span class="p">)</span>
+
+<span class="n">raw</span> <span class="o">:=</span> <span class="n">s</span><span class="o">.</span><span class="n">ToBytes</span><span class="p">()</span>
+</code></pre></div></div>
+
+<h2 id="deserializer">Deserializer</h2>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">d</span> <span class="o">:=</span> <span class="n">bcs</span><span class="o">.</span><span class="n">NewDeserializer</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+<span class="n">n</span> <span class="o">:=</span> <span class="n">d</span><span class="o">.</span><span class="n">DeserializeU64</span><span class="p">()</span>
+<span class="n">b</span> <span class="o">:=</span> <span class="n">d</span><span class="o">.</span><span class="n">DeserializeBytes</span><span class="p">()</span>
+</code></pre></div></div>
+
+<h2 id="key-serialization-rules">Key serialization rules</h2>
+
+<ul>
+  <li><strong>Public keys and signatures</strong> use <code class="language-plaintext highlighter-rouge">SerializeBytes</code> (length-prefixed). Using <code class="language-plaintext highlighter-rouge">SerializeFixedBytes</code> here will cause a deserialize error on the node.</li>
+  <li><strong>Account addresses</strong> use <code class="language-plaintext highlighter-rouge">SerializeFixedBytes</code> (always 32 bytes, no prefix).</li>
+  <li><strong>Integers</strong> use their fixed-size variants (<code class="language-plaintext highlighter-rouge">SerializeU8</code>, <code class="language-plaintext highlighter-rouge">SerializeU32</code>, <code class="language-plaintext highlighter-rouge">SerializeU64</code>).</li>
+</ul>
