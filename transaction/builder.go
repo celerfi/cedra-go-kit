@@ -28,13 +28,26 @@ func NewBuilder(c *client.Client) *Builder {
 }
 
 func (b *Builder) Build(ctx context.Context, sender account.AccountAddress, opts BuildOptions) (*RawTransaction, error) {
-	var acct types.AccountData
-	if err := b.c.Get(ctx, "/accounts/"+sender.Hex(), nil, &acct); err != nil {
-		return nil, fmt.Errorf("builder: fetch account: %w", err)
+	var seq uint64
+	fetchFromNetwork := true
+
+	// Check if a manual Sequence Number was pushed via options
+	// This skips the network call, preventing mempool nonce collisions on highly concurrent events
+	if opts.Options != nil && opts.Options.SequenceNumber != nil {
+		seq = *opts.Options.SequenceNumber
+		fetchFromNetwork = false
 	}
-	seq, err := strconv.ParseUint(acct.SequenceNumber, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("builder: parse sequence_number: %w", err)
+
+	if fetchFromNetwork {
+		var acct types.AccountData
+		if err := b.c.Get(ctx, "/accounts/"+sender.Hex(), nil, &acct); err != nil {
+			return nil, fmt.Errorf("builder: fetch account: %w", err)
+		}
+		var err error
+		seq, err = strconv.ParseUint(acct.SequenceNumber, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("builder: parse sequence_number: %w", err)
+		}
 	}
 
 	var gasEst types.GasEstimation
