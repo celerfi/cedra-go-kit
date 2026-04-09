@@ -27,7 +27,7 @@ type CommittedTransaction struct {
 }
 
 type ViewRequest struct {
-	Function      string `json:"function"`
+	Function      string   `json:"function"`
 	TypeArguments []string `json:"type_arguments"`
 	Arguments     []any    `json:"arguments"`
 }
@@ -36,4 +36,7 @@ type TransactionOptions struct {
 	MaxGasAmount   *uint64
 	GasUnitPrice   *uint64
 	ExpirationSecs *uint64
+	// Optional override: If provided, bypasses the node's sequence number lookup
+	// to allow for high-frequency concurrent transaction processing.
+	SequenceNumber *uint64
 }
