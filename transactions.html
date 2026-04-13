@@ -67,22 +67,77 @@
       <td>Function arguments</td>
     </tr>
     <tr>
-      <td><code class="language-plaintext highlighter-rouge">MaxGasAmount</code></td>
-      <td><code class="language-plaintext highlighter-rouge">uint64</code></td>
-      <td>Override default (200,000)</td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">GasUnitPrice</code></td>
-      <td><code class="language-plaintext highlighter-rouge">uint64</code></td>
-      <td>Override gas price</td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">ExpirationSecs</code></td>
-      <td><code class="language-plaintext highlighter-rouge">uint64</code></td>
-      <td>TTL from now (default 20s)</td>
+      <td><code class="language-plaintext highlighter-rouge">Options</code></td>
+      <td><code class="language-plaintext highlighter-rouge">*TransactionOptions</code></td>
+      <td>Optional overrides (gas, expiry, sequence number)</td>
     </tr>
   </tbody>
 </table>
+
+<h2 id="transactionoptions">TransactionOptions</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MaxGasAmount</code></td>
+      <td><code class="language-plaintext highlighter-rouge">*uint64</code></td>
+      <td>Override default max gas (200,000)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GasUnitPrice</code></td>
+      <td><code class="language-plaintext highlighter-rouge">*uint64</code></td>
+      <td>Override gas unit price</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ExpirationSecs</code></td>
+      <td><code class="language-plaintext highlighter-rouge">*uint64</code></td>
+      <td>TTL from now in seconds (default 20s)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">SequenceNumber</code></td>
+      <td><code class="language-plaintext highlighter-rouge">*uint64</code></td>
+      <td><strong>Skip the network fetch and use this value directly.</strong> Use this for high-frequency or concurrent submission — see below.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="high-frequency--concurrent-transactions">High-frequency / concurrent transactions</h2>
+
+<p>By default <code class="language-plaintext highlighter-rouge">BuildTransaction</code> fetches the account’s sequence number from the node on every call. When multiple goroutines call it simultaneously they all receive the <strong>same</strong> sequence number, causing <code class="language-plaintext highlighter-rouge">Transaction already in mempool</code> collisions.</p>
+
+<p>Manage sequence state in memory and pass it in explicitly to avoid this:</p>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">var</span> <span class="p">(</span>
+    <span class="n">mu</span>  <span class="n">sync</span><span class="o">.</span><span class="n">Mutex</span>
+    <span class="n">seq</span> <span class="kt">uint64</span>
+<span class="p">)</span>
+
+<span class="c">// Fetch once at startup</span>
+<span class="n">acctData</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">cedra</span><span class="o">.</span><span class="n">Account</span><span class="o">.</span><span class="n">GetAccountInfo</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">alice</span><span class="o">.</span><span class="n">Address</span><span class="p">()</span><span class="o">.</span><span class="n">Hex</span><span class="p">())</span>
+<span class="n">seq</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">strconv</span><span class="o">.</span><span class="n">ParseUint</span><span class="p">(</span><span class="n">acctData</span><span class="o">.</span><span class="n">SequenceNumber</span><span class="p">,</span> <span class="m">10</span><span class="p">,</span> <span class="m">64</span><span class="p">)</span>
+
+<span class="k">func</span> <span class="n">submitNext</span><span class="p">(</span><span class="n">payload</span> <span class="n">transaction</span><span class="o">.</span><span class="n">BuildOptions</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">mu</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+    <span class="n">s</span> <span class="o">:=</span> <span class="n">seq</span>
+    <span class="n">seq</span><span class="o">++</span>
+    <span class="n">mu</span><span class="o">.</span><span class="n">Unlock</span><span class="p">()</span>
+
+    <span class="n">payload</span><span class="o">.</span><span class="n">Options</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">types</span><span class="o">.</span><span class="n">TransactionOptions</span><span class="p">{</span><span class="n">SequenceNumber</span><span class="o">:</span> <span class="o">&amp;</span><span class="n">s</span><span class="p">}</span>
+    <span class="n">rawTxn</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">cedra</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">BuildTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">alice</span><span class="o">.</span><span class="n">Address</span><span class="p">(),</span> <span class="n">payload</span><span class="p">)</span>
+    <span class="n">signed</span><span class="p">,</span> <span class="n">_</span>  <span class="o">:=</span> <span class="n">transaction</span><span class="o">.</span><span class="n">SignTransaction</span><span class="p">(</span><span class="n">rawTxn</span><span class="p">,</span> <span class="n">alice</span><span class="p">)</span>
+    <span class="n">pending</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">cedra</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">SubmitTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">signed</span><span class="p">)</span>
+    <span class="n">cedra</span><span class="o">.</span><span class="n">WaitForTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">pending</span><span class="o">.</span><span class="n">Hash</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This pattern is the standard approach for keeper bots, activity generators, and any service submitting multiple transactions per second from the same account.</p>
 
 <h2 id="signing-internals">Signing internals</h2>
 
