@@ -9,6 +9,41 @@ import (
 	"github.com/celerfi/cedra-go-kit/bcs"
 )
 
+func makeFixedFeePayerRawTxn(t *testing.T) (*RawTransaction, *FeePayerRawTransaction, *account.Ed25519Account, *account.Ed25519Account) {
+	t.Helper()
+
+	sender, err := account.NewEd25519AccountFromHex("0x1111111111111111111111111111111111111111111111111111111111111111")
+	if err != nil {
+		t.Fatalf("sender account: %v", err)
+	}
+	feePayer, err := account.NewEd25519AccountFromHex("0x2222222222222222222222222222222222222222222222222222222222222222")
+	if err != nil {
+		t.Fatalf("fee payer account: %v", err)
+	}
+	recipient, _ := account.AccountAddressFromHex("0xdeadbeef")
+	moduleAddr, _ := account.AccountAddressFromHex("0x1")
+
+	rawTxn := &RawTransaction{
+		Sender:         sender.Address(),
+		SequenceNumber: 7,
+		Payload: &EntryFunction{
+			Module:   ModuleID{Address: moduleAddr, Name: "cedra_account"},
+			Function: "transfer",
+			TypeArgs: []TypeTag{},
+			Args: [][]byte{
+				SerializeAddressArg(recipient),
+				SerializeU64Arg(4242),
+			},
+		},
+		MaxGasAmount:            200_000,
+		GasUnitPrice:            100,
+		ExpirationTimestampSecs: 1_700_000_000,
+		ChainID:                 2,
+	}
+
+	return rawTxn, rawTxn.WithFeePayer(account.AccountAddress{}), sender, feePayer
+}
+
 func TestSerializeU64Arg(t *testing.T) {
 	b := SerializeU64Arg(1000)
 	if len(b) != 8 {
@@ -168,6 +203,18 @@ func TestRawTransactionSigningMessageDeterministic(t *testing.T) {
 	b2 := build()
 	if hex.EncodeToString(b1) != hex.EncodeToString(b2) {
 		t.Error("raw transaction serialization is not deterministic")
+	}
+}
+
+func TestFeePayerRawTransactionSerialize(t *testing.T) {
+	_, feePayerRawTxn, _, _ := makeFixedFeePayerRawTxn(t)
+
+	s := &bcs.Serializer{}
+	feePayerRawTxn.Serialize(s)
+
+	const wantHex = "01147e4d3a5b10eaed2a93536e284c23096dfcea9ac61f0a8420e5d01fbd8f0ea807000000000000000200000000000000000000000000000000000000000000000000000000000000010d63656472615f6163636f756e74087472616e7366657200022000000000000000000000000000000000000000000000000000000000deadbeef089210000000000000400d030000000000640000000000000000f1536500000000020700000000000000000000000000000000000000000000000000000000000000010a63656472615f636f696e094365647261436f696e00000000000000000000000000000000000000000000000000000000000000000000"
+	if got := hex.EncodeToString(s.ToBytes()); got != wantHex {
+		t.Fatalf("fee-payer raw txn mismatch\nwant: %s\ngot:  %s", wantHex, got)
 	}
 }
 

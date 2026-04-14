@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/celerfi/cedra-go-kit/account"
 	"github.com/celerfi/cedra-go-kit/client"
@@ -43,11 +44,37 @@ func NewCedraWithConfig(cfg client.Config) *Cedra {
 }
 
 func (ce *Cedra) SignAndSubmitTransaction(ctx context.Context, signer account.Account, opts transaction.BuildOptions) (*types.CommittedTransaction, error) {
+	if opts.WithFeePayer || opts.FeePayerAddress != nil {
+		return nil, fmt.Errorf("fee-payer transactions require SignAndSubmitFeePayerTransaction")
+	}
 	rawTxn, err := ce.Transaction.BuildTransaction(ctx, signer.Address(), opts)
 	if err != nil {
 		return nil, err
 	}
 	signedBytes, err := transaction.SignTransaction(rawTxn, signer)
+	if err != nil {
+		return nil, err
+	}
+	pending, err := ce.Transaction.SubmitTransaction(ctx, signedBytes)
+	if err != nil {
+		return nil, err
+	}
+	return ce.Transaction.WaitForTransaction(ctx, pending.Hash)
+}
+
+func (ce *Cedra) SignAndSubmitFeePayerTransaction(ctx context.Context, sender account.Account, feePayer account.Account, opts transaction.BuildOptions) (*types.CommittedTransaction, error) {
+	if !opts.WithFeePayer {
+		opts.WithFeePayer = true
+	}
+	if opts.FeePayerAddress == nil {
+		addr := feePayer.Address()
+		opts.FeePayerAddress = &addr
+	}
+	rawTxn, err := ce.Transaction.BuildFeePayerTransaction(ctx, sender.Address(), opts)
+	if err != nil {
+		return nil, err
+	}
+	signedBytes, err := transaction.SignFeePayerTransaction(rawTxn, sender, feePayer)
 	if err != nil {
 		return nil, err
 	}
