@@ -40,6 +40,61 @@
 
 <p>The simulation endpoint requires a zeroed signature (64 zero bytes). The SDK handles this automatically via <code class="language-plaintext highlighter-rouge">transaction.SimulateTransaction</code>.</p>
 
+<h2 id="fee-payer-transactions">Fee-payer transactions</h2>
+
+<p>Use <code class="language-plaintext highlighter-rouge">BuildFeePayerTransaction</code> for sponsored transactions where a second account pays gas. The signing message follows the fee-payer domain:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sha3_256("CEDRA::RawTransactionWithData") || bcs(feePayerRawTransaction)
+</code></pre></div></div>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">feePayer</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">account</span><span class="o">.</span><span class="n">NewEd25519AccountFromHex</span><span class="p">(</span><span class="s">"0xFEE_PAYER_PRIVATE_KEY"</span><span class="p">)</span>
+
+<span class="n">feePayerTxn</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">BuildFeePayerTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">acct</span><span class="o">.</span><span class="n">Address</span><span class="p">(),</span> <span class="n">transaction</span><span class="o">.</span><span class="n">BuildOptions</span><span class="p">{</span>
+    <span class="n">Function</span><span class="o">:</span> <span class="s">"0x1::cedra_account::transfer"</span><span class="p">,</span>
+    <span class="n">Args</span><span class="o">:</span> <span class="p">[][]</span><span class="kt">byte</span><span class="p">{</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">SerializeAddressArg</span><span class="p">(</span><span class="n">recipientAddr</span><span class="p">),</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">SerializeU64Arg</span><span class="p">(</span><span class="m">1_000_000</span><span class="p">),</span>
+    <span class="p">},</span>
+    <span class="n">WithFeePayer</span><span class="o">:</span> <span class="no">true</span><span class="p">,</span>
+<span class="p">})</span>
+
+<span class="n">senderAuthenticator</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">transaction</span><span class="o">.</span><span class="n">SignFeePayerTransactionSenderAuthenticator</span><span class="p">(</span><span class="n">feePayerTxn</span><span class="p">,</span> <span class="n">acct</span><span class="p">)</span>
+<span class="n">feePayerAuthenticator</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">transaction</span><span class="o">.</span><span class="n">SignFeePayerTransactionFeePayerAuthenticator</span><span class="p">(</span><span class="n">feePayerTxn</span><span class="p">,</span> <span class="n">feePayer</span><span class="p">)</span>
+
+<span class="n">signedBytes</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">transaction</span><span class="o">.</span><span class="n">AssembleFeePayerSignedTransaction</span><span class="p">(</span>
+    <span class="n">feePayerTxn</span><span class="p">,</span>
+    <span class="n">senderAuthenticator</span><span class="p">,</span>
+    <span class="n">feePayer</span><span class="o">.</span><span class="n">Address</span><span class="p">(),</span>
+    <span class="n">feePayerAuthenticator</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">pending</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">SubmitTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">signedBytes</span><span class="p">)</span>
+
+<span class="c">// Or simulate with zeroed signatures first.</span>
+<span class="n">results</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">SimulateFeePayerTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">feePayerTxn</span><span class="p">,</span> <span class="n">acct</span><span class="p">,</span> <span class="n">feePayer</span><span class="p">)</span>
+<span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="m">0</span><span class="p">]</span><span class="o">.</span><span class="n">GasUsed</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Browser/backend split:</p>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">// Frontend:</span>
+<span class="n">feePayerTxn</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">BuildFeePayerTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">acct</span><span class="o">.</span><span class="n">Address</span><span class="p">(),</span> <span class="n">transaction</span><span class="o">.</span><span class="n">BuildOptions</span><span class="p">{</span>
+    <span class="n">Function</span><span class="o">:</span>     <span class="s">"0x1::cedra_account::transfer"</span><span class="p">,</span>
+    <span class="n">Args</span><span class="o">:</span>         <span class="p">[][]</span><span class="kt">byte</span><span class="p">{</span><span class="n">transaction</span><span class="o">.</span><span class="n">SerializeAddressArg</span><span class="p">(</span><span class="n">recipientAddr</span><span class="p">),</span> <span class="n">transaction</span><span class="o">.</span><span class="n">SerializeU64Arg</span><span class="p">(</span><span class="m">1_000_000</span><span class="p">)},</span>
+    <span class="n">WithFeePayer</span><span class="o">:</span> <span class="no">true</span><span class="p">,</span>
+<span class="p">})</span>
+<span class="n">senderAuthenticator</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">transaction</span><span class="o">.</span><span class="n">SignFeePayerTransactionSenderAuthenticator</span><span class="p">(</span><span class="n">feePayerTxn</span><span class="p">,</span> <span class="n">acct</span><span class="p">)</span>
+
+<span class="c">// Backend:</span>
+<span class="n">feePayerAuthenticator</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">transaction</span><span class="o">.</span><span class="n">SignFeePayerTransactionFeePayerAuthenticator</span><span class="p">(</span><span class="n">feePayerTxn</span><span class="p">,</span> <span class="n">sponsor</span><span class="p">)</span>
+<span class="n">signedBytes</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">transaction</span><span class="o">.</span><span class="n">AssembleFeePayerSignedTransaction</span><span class="p">(</span>
+    <span class="n">feePayerTxn</span><span class="p">,</span>
+    <span class="n">senderAuthenticator</span><span class="p">,</span>
+    <span class="n">sponsor</span><span class="o">.</span><span class="n">Address</span><span class="p">(),</span>
+    <span class="n">feePayerAuthenticator</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">pending</span><span class="p">,</span> <span class="n">_</span> <span class="o">:=</span> <span class="n">c</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">SubmitTransaction</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">signedBytes</span><span class="p">)</span>
+</code></pre></div></div>
+
 <h2 id="buildoptions">BuildOptions</h2>
 
 <table>
@@ -65,6 +120,16 @@
       <td><code class="language-plaintext highlighter-rouge">Arguments</code></td>
       <td><code class="language-plaintext highlighter-rouge">[]any</code></td>
       <td>Function arguments</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">WithFeePayer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
+      <td>Build a fee-payer/sponsored transaction wrapper</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">FeePayerAddress</code></td>
+      <td><code class="language-plaintext highlighter-rouge">*account.AccountAddress</code></td>
+      <td>Optional fee payer address included in the signing wrapper</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">Options</code></td>
