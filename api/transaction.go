@@ -66,8 +66,24 @@ func (t *TransactionAPI) BuildTransaction(ctx context.Context, sender account.Ac
 	return t.builder.Build(ctx, sender, opts)
 }
 
+func (t *TransactionAPI) BuildFeePayerTransaction(ctx context.Context, sender account.AccountAddress, opts transaction.BuildOptions) (*transaction.FeePayerRawTransaction, error) {
+	return t.builder.BuildFeePayer(ctx, sender, opts)
+}
+
 func (t *TransactionAPI) SimulateTransaction(ctx context.Context, rawTxn *transaction.RawTransaction, signer account.Account) ([]types.CommittedTransaction, error) {
 	signedBytes, err := transaction.SimulateTransaction(rawTxn, signer)
+	if err != nil {
+		return nil, err
+	}
+	var results []types.CommittedTransaction
+	if err := t.c.PostBCS(ctx, "/transactions/simulate", signedBytes, &results); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+func (t *TransactionAPI) SimulateFeePayerTransaction(ctx context.Context, rawTxn *transaction.FeePayerRawTransaction, signer account.Account, feePayer account.Account) ([]types.CommittedTransaction, error) {
+	signedBytes, err := transaction.SimulateFeePayerTransaction(rawTxn, signer, feePayer)
 	if err != nil {
 		return nil, err
 	}

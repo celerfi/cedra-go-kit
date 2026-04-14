@@ -138,6 +138,33 @@ pending, _ := cedra.Transaction.SubmitTransaction(ctx, signedBytes)
 committed, _ := cedra.WaitForTransaction(ctx, pending.Hash)
 ```
 
+## Fee-Payer Transactions
+
+```go
+feePayer, _ := account.NewEd25519AccountFromHex("0xFEE_PAYER_PRIVATE_KEY")
+
+feePayerTxn, err := cedra.Transaction.BuildFeePayerTransaction(ctx, alice.Address(), transaction.BuildOptions{
+    Function:     "0x1::cedra_account::transfer",
+    Args: [][]byte{
+        transaction.SerializeAddressArg(bobAddr),
+        transaction.SerializeU64Arg(500_000),
+    },
+    WithFeePayer: true,
+})
+
+senderAuthenticator, _ := transaction.SignFeePayerTransactionSenderAuthenticator(feePayerTxn, alice)
+feePayerAuthenticator, _ := transaction.SignFeePayerTransactionFeePayerAuthenticator(feePayerTxn, feePayer)
+signedBytes, _ := transaction.AssembleFeePayerSignedTransaction(
+    feePayerTxn,
+    senderAuthenticator,
+    feePayer.Address(),
+    feePayerAuthenticator,
+)
+
+pending, _ := cedra.Transaction.SubmitTransaction(ctx, signedBytes)
+committed, _ := cedra.WaitForTransaction(ctx, pending.Hash)
+```
+
 ## ANS
 
 ```go

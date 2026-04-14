@@ -13,10 +13,12 @@ import (
 )
 
 type BuildOptions struct {
-	Function string
-	TypeArgs []string
-	Args     [][]byte
-	Options  *types.TransactionOptions
+	Function        string
+	TypeArgs        []string
+	Args            [][]byte
+	WithFeePayer    bool
+	FeePayerAddress *account.AccountAddress
+	Options         *types.TransactionOptions
 }
 
 type Builder struct {
@@ -28,6 +30,28 @@ func NewBuilder(c *client.Client) *Builder {
 }
 
 func (b *Builder) Build(ctx context.Context, sender account.AccountAddress, opts BuildOptions) (*RawTransaction, error) {
+	if opts.WithFeePayer {
+		return nil, fmt.Errorf("builder: with_fee_payer requested; use BuildFeePayer")
+	}
+	if opts.FeePayerAddress != nil {
+		return nil, fmt.Errorf("builder: fee payer address provided; use BuildFeePayer")
+	}
+	return b.buildRawTransaction(ctx, sender, opts)
+}
+
+func (b *Builder) BuildFeePayer(ctx context.Context, sender account.AccountAddress, opts BuildOptions) (*FeePayerRawTransaction, error) {
+	rawTxn, err := b.buildRawTransaction(ctx, sender, opts)
+	if err != nil {
+		return nil, err
+	}
+	var feePayer account.AccountAddress
+	if opts.FeePayerAddress != nil {
+		feePayer = *opts.FeePayerAddress
+	}
+	return rawTxn.WithFeePayer(feePayer), nil
+}
+
+func (b *Builder) buildRawTransaction(ctx context.Context, sender account.AccountAddress, opts BuildOptions) (*RawTransaction, error) {
 	var seq uint64
 	fetchFromNetwork := true
 

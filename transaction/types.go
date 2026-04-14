@@ -148,6 +148,11 @@ type RawTransaction struct {
 	FeePayerCurrency        TypeTag
 }
 
+type FeePayerRawTransaction struct {
+	RawTransaction  *RawTransaction
+	FeePayerAddress account.AccountAddress
+}
+
 func defaultFeePayerCurrency() TypeTag {
 	addr, _ := account.AccountAddressFromHex("0x1")
 	return TypeTagStruct{Address: addr, Module: "cedra_coin", Name: "CedraCoin"}
@@ -167,6 +172,20 @@ func (r *RawTransaction) Serialize(s *bcs.Serializer) {
 		currency = defaultFeePayerCurrency()
 	}
 	currency.serializeTypeTag(s)
+}
+
+func (r *RawTransaction) WithFeePayer(feePayer account.AccountAddress) *FeePayerRawTransaction {
+	return &FeePayerRawTransaction{
+		RawTransaction:  r,
+		FeePayerAddress: feePayer,
+	}
+}
+
+func (r *FeePayerRawTransaction) Serialize(s *bcs.Serializer) {
+	s.SerializeULEB128(1)
+	r.RawTransaction.Serialize(s)
+	s.SerializeULEB128(0)
+	r.FeePayerAddress.Serialize(s)
 }
 
 func SerializeBoolArg(v bool) []byte {

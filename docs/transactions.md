@@ -47,6 +47,64 @@ fmt.Println(results[0].GasUsed)
 
 The simulation endpoint requires a zeroed signature (64 zero bytes). The SDK handles this automatically via `transaction.SimulateTransaction`.
 
+## Fee-payer transactions
+
+Use `BuildFeePayerTransaction` for sponsored transactions where a second account pays gas. The signing message follows the fee-payer domain:
+
+```
+sha3_256("CEDRA::RawTransactionWithData") || bcs(feePayerRawTransaction)
+```
+
+```go
+feePayer, _ := account.NewEd25519AccountFromHex("0xFEE_PAYER_PRIVATE_KEY")
+
+feePayerTxn, err := c.Transaction.BuildFeePayerTransaction(ctx, acct.Address(), transaction.BuildOptions{
+    Function: "0x1::cedra_account::transfer",
+    Args: [][]byte{
+        transaction.SerializeAddressArg(recipientAddr),
+        transaction.SerializeU64Arg(1_000_000),
+    },
+    WithFeePayer: true,
+})
+
+senderAuthenticator, err := transaction.SignFeePayerTransactionSenderAuthenticator(feePayerTxn, acct)
+feePayerAuthenticator, err := transaction.SignFeePayerTransactionFeePayerAuthenticator(feePayerTxn, feePayer)
+
+signedBytes, err := transaction.AssembleFeePayerSignedTransaction(
+    feePayerTxn,
+    senderAuthenticator,
+    feePayer.Address(),
+    feePayerAuthenticator,
+)
+pending, err := c.Transaction.SubmitTransaction(ctx, signedBytes)
+
+// Or simulate with zeroed signatures first.
+results, err := c.Transaction.SimulateFeePayerTransaction(ctx, feePayerTxn, acct, feePayer)
+fmt.Println(results[0].GasUsed)
+```
+
+Browser/backend split:
+
+```go
+// Frontend:
+feePayerTxn, _ := c.Transaction.BuildFeePayerTransaction(ctx, acct.Address(), transaction.BuildOptions{
+    Function:     "0x1::cedra_account::transfer",
+    Args:         [][]byte{transaction.SerializeAddressArg(recipientAddr), transaction.SerializeU64Arg(1_000_000)},
+    WithFeePayer: true,
+})
+senderAuthenticator, _ := transaction.SignFeePayerTransactionSenderAuthenticator(feePayerTxn, acct)
+
+// Backend:
+feePayerAuthenticator, _ := transaction.SignFeePayerTransactionFeePayerAuthenticator(feePayerTxn, sponsor)
+signedBytes, _ := transaction.AssembleFeePayerSignedTransaction(
+    feePayerTxn,
+    senderAuthenticator,
+    sponsor.Address(),
+    feePayerAuthenticator,
+)
+pending, _ := c.Transaction.SubmitTransaction(ctx, signedBytes)
+```
+
 ## BuildOptions
 
 | Field | Type | Description |
@@ -54,6 +112,8 @@ The simulation endpoint requires a zeroed signature (64 zero bytes). The SDK han
 | `Function` | `string` | Module function e.g. `0x1::aptos_account::transfer` |
 | `TypeArguments` | `[]string` | Generic type params |
 | `Arguments` | `[]any` | Function arguments |
+| `WithFeePayer` | `bool` | Build a fee-payer/sponsored transaction wrapper |
+| `FeePayerAddress` | `*account.AccountAddress` | Optional fee payer address included in the signing wrapper |
 | `Options` | `*TransactionOptions` | Optional overrides (gas, expiry, sequence number) |
 
 ## TransactionOptions
